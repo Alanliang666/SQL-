@@ -1,0 +1,47 @@
+WITH customers_core AS(
+    SELECT Customers.customerid, Customers.firsttransactiondate
+      FROM Customers
+ LEFT JOIN Orders
+        ON Orders.customerid = Customers.customerid
+       AND Orders.transactiondate = Customers.firsttransactiondate 
+ LEFT JOIN OrderDetails
+        ON OrderDetails.orderid = Orders.orderid 
+ LEFT JOIN Products
+        ON Products.productid = OrderDetails.productid
+ LEFT JOIN (SELECT * FROM Products WHERE producttype = '核心產品') AS products_core
+        on products_core.productid = OrderDetails.productid
+     WHERE products_core.productid IS NOT NULL
+),
+    customers_road AS(
+    SELECT Customers.customerid, Customers.firsttransactiondate
+      FROM Customers
+ LEFT JOIN Orders
+        ON Orders.customerid = Customers.customerid
+       AND Orders.transactiondate = Customers.firsttransactiondate 
+ LEFT JOIN OrderDetails
+        ON OrderDetails.orderid = Orders.orderid 
+ LEFT JOIN Products
+        ON Products.productid = OrderDetails.productid
+ LEFT JOIN (SELECT * FROM Products WHERE producttype = '帶路產品') AS products_road
+        on products_road.productid = OrderDetails.productid
+     WHERE products_road.productid IS NOT NULL
+),
+   repurchase_cnt AS(
+     SELECT customerid, transactionyear, COUNT(DISTINCT(orderid)) AS orders_cnt
+       FROM Orders
+      GROUP BY 1, 2
+)
+     
+
+   SELECT Customers.firsttransactionyear, COUNT(DISTINCT(Customers.customerid)) AS customers_cnt, COUNT(DISTINCT(repurchase_T.customerid)) AS repurchase
+     FROM Customers
+LEFT JOIN customers_core
+       ON customers_core.customerid = Customers.customerid
+LEFT JOIN customers_road
+       ON customers_road.customerid = Customers.customerid
+LEFT JOIN (SELECT * FROM repurchase_cnt WHERE orders_cnt >1) AS repurchase_T
+       ON repurchase_T.customerid = Customers.customerid
+      AND repurchase_T.transactionyear = Customers.firsttransactionyear
+    WHERE customers_core.customerid IS NULL
+      AND customers_road.customerid IS NULL
+ GROUP BY 1
