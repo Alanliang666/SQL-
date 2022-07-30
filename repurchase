@@ -1,0 +1,16 @@
+      WITH Orders_Count AS (
+    SELECT 
+           Customerid
+           ,Transactionyear
+           ,COUNT(DISTINCT(orderid)) AS Order_Cnt
+      FROM Orders
+     GROUP BY 1, 2)
+ 
+   SELECT Customers.firsttransactionyear
+         ,COUNT(DISTINCT(Customers.customerid)) AS new_customer
+         ,COUNT(DISTINCT(Orders_T.customerid)) AS repurchase_customer
+     FROM Customers
+LEFT JOIN (SELECT * FROM Orders_count WHERE Order_Cnt > 1) AS Orders_T
+       ON Customers.customerid = Orders_T.customerid 
+      AND Customers.firsttransactionyear = Orders_T.transactionyear 
+    GROUP BY 1
