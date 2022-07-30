@@ -1,0 +1,14 @@
+WITH Orders_Count AS (
+    SELECT customerid ,TransactionYear ,count(distinct orderid) as order_cnt
+      FROM Orders
+     GROUP BY 1,2
+)
+
+   SELECT Customers.firsttransactionyear ,Channels.channeltype ,COUNT(DISTINCT Customers.customerid) AS new_customer_cnt ,COUNT(DISTINCT Orders_T.customerid) AS repurchase_customer_cnt       
+     FROM Customers
+LEFT JOIN (select * from Orders_Count where order_cnt>1) AS Orders_T
+       ON Customers.customerid = Orders_T.customerid
+      AND Customers.firsttransactionyear = Orders_T.transactionyear
+LEFT JOIN Channels
+       ON Customers.firstchannel = Channels.channel
+    group by 1,2
